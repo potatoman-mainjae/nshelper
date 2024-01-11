@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로필 페이지</title>
+    <link rel="stylesheet" type="text/css" href="nav.css">
+    <link rel="stylesheet" type="text/css" href="rac.css">
+</head>
+<body>
+    <div>Teachable Machine Image Model</div>
+    <button type="button" onclick="init()">Start</button>
+    <div id="webcam-container"></div>
+    <div id="label-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script type="text/javascript">
+        const URL = "https://teachablemachine.withgoogle.com/models/NS6FlekkR/";
+        let model, webcam, labelContainer, maxPredictions;
+
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+
+            const flip = true;
+            webcam = new tmImage.Webcam(200, 200, flip);
+            await webcam.setup();
+            await webcam.play();
+            window.requestAnimationFrame(loop);
+
+            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < maxPredictions; i++) {
+                labelContainer.appendChild(document.createElement("div"));
+            }
+        }
+
+        async function loop() {
+            webcam.update();
+            await predict();
+            setTimeout(() => {
+                window.requestAnimationFrame(loop);
+            }, 1000); // Update every 1000 milliseconds (1 second)
+        }
+
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            let maxProb = 0;
+            let maxIndex = 0;
+
+            for (let i = 0; i < maxPredictions; i++) {
+                const probability = prediction[i].probability.toFixed(2);
+                labelContainer.childNodes[i].innerHTML = prediction[i].className + ": " + probability;
+
+                // Find the class with the maximum probability
+                if (probability > maxProb) {
+                    maxProb = probability;
+                    maxIndex = i;
+                }
+            }
+
+            // Output 1 to the console if the class with the maximum probability is "개", otherwise output 0
+            if (prediction[maxIndex].className === "개") {
+                console.log(1);
+            } else {
+                console.log(0);
+            }
+       // 웹소켓을 사용하여 서버로 데이터를 전송하는 함수
+        function sendDataToServer(data) {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(data);
+            }
+        }
+    }
+    </script>
+</body>
+</html>
